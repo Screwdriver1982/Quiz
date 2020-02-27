@@ -74,12 +74,12 @@ public class GameManager : MonoBehaviour
         if (correct)
         { 
             resultText.text = "CORRECT";
-            //resultText.color = 
+            resultText.color = Color.green;
         }
         else 
         {
             resultText.text = "WRONG";
-            //resultText.color = 
+            resultText.color = Color.red;
         }
     }
 
