@@ -16,32 +16,61 @@ public class GameManager : MonoBehaviour
     public List<QuestionData> allQuestions;
     QuestionData activeQuestion;
     public Text resultText;
+    public Text triesLeft;
+    public int difficultyLevel;
+    int maxMistake;
+    int doneMistake;
+    public float answerTime;
+    float leftTime;
+    GameRecord gameRecordComponent;
+
 
 
     // Start is called before the first frame update
     void Start()
     {
+        GameDifficulty difficultyComponent = FindObjectOfType<GameDifficulty>();
+        difficultyLevel = difficultyComponent.difficulty;
+        Destroy(difficultyComponent.gameObject);
+        maxMistake = 2 - difficultyLevel;
+        doneMistake = 0;
+        answerTime = answerTime - difficultyLevel;
+        gameRecordComponent = FindObjectOfType<GameRecord>();
+        gameRecordComponent.maxQuestions = allQuestions.Count;
+
         LoadNextQuestion();
     }
 
     private void LoadNextQuestion()
     {
-        //берет случайный элемент из листа-массива, правая граница не включается
-        int randomIndex = Random.Range(0, allQuestions.Count);
-        activeQuestion = allQuestions[randomIndex];
-        questionImage.sprite = activeQuestion.image;
-
-        for (int index = 0; index < buttons.Length; index++)
+        if ((doneMistake > maxMistake) || allQuestions.Count == 0)
         {
+            ScenesLoader scenesLoaderComponent = FindObjectOfType<ScenesLoader>();
+            scenesLoaderComponent.LoadNextLevel();
+        }
+        else
+        { 
+       
+            triesLeft.text = "Mistakes: " + doneMistake + "/" + maxMistake ;
 
-            //для понятности разбито на 3 шага, но можно все объединить в один с кучей точек
-            //buttons[0].GetComponentInChildren<Text>().text ="Bla Bla bla";
+            //берет случайный элемент из листа-массива, правая граница не включается
+            int randomIndex = Random.Range(0, allQuestions.Count);
+            activeQuestion = allQuestions[randomIndex];
+            questionImage.sprite = activeQuestion.image;
 
-            Button Button = buttons[index];
-            Text ButtonChildText = Button.GetComponentInChildren<Text>();
+            for (int index = 0; index < buttons.Length; index++)
+            {
 
-            string answerText = activeQuestion.questions[index];
-            ButtonChildText.text = answerText.ToUpper();
+                //для понятности разбито на 3 шага, но можно все объединить в один с кучей точек
+                //buttons[0].GetComponentInChildren<Text>().text ="Bla Bla bla";
+
+                Button Button = buttons[index];
+                Text ButtonChildText = Button.GetComponentInChildren<Text>();
+
+                string answerText = activeQuestion.questions[index];
+                ButtonChildText.text = answerText.ToUpper();
+            }
+            leftTime = answerTime;
         }
     }
 
@@ -51,12 +80,14 @@ public class GameManager : MonoBehaviour
         if (answerNumber == activeQuestion.rightAnswer)
         {
             // correct
+            gameRecordComponent.playerRecord += 1;
             ShowResult(true);
         }
 
         else
         {
             // incorrect
+            doneMistake += 1;
             ShowResult(false);
         }
 
@@ -122,5 +153,18 @@ public class GameManager : MonoBehaviour
 
     }
 
-
+    private void Update()
+    {
+        if (leftTime > 0)
+        {
+            leftTime = leftTime - Time.deltaTime;
+            Debug.Log(leftTime);
+        }
+        else
+        {
+            doneMistake += 1;
+            allQuestions.Remove(activeQuestion); //удаляет из листа вопрос, на который ссылается activeQuestion
+            LoadNextQuestion();
+        }
+    }
 }
